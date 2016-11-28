@@ -17,5 +17,8 @@ endclocking : cb
 
 modport dp(input clk, input rst, input addr, input RW, input Sel,
     input data_wr, output data_rd);
+    
+modport dn(output addr, output RW, output Sel, output data_wr,
+    input data_rd);
 
 endinterface : crc_if

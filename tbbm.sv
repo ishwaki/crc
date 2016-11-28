@@ -4,6 +4,7 @@
 `timescale 1ns/10ps
 
 `include "crcif.sv"
+`include "nocif.sv"
 
 package crc_pkg;
 
@@ -11,7 +12,7 @@ package crc_pkg;
 
 import uvm_pkg::*;
 
-`include "ucrc.svrp"
+`include "unocb.svp"
 
 endpackage : crc_pkg
 
@@ -19,12 +20,16 @@ import uvm_pkg::*;
 import crc_pkg::*;
 
 `include "crc.sv"
+`include "bm.sv"
 
 module top();
 
-reg debug=0;
+reg debug=1;
 
 crc_if cif();
+nocif nif(cif.clk,cif.rst);
+
+noc n(nif.md,cif.dn);
 
 crc c(cif.dp);
 
@@ -36,7 +41,9 @@ end
 initial begin
   cif.rst=0;
   cif.Sel=0;
-  repeat(5000000) @(posedge(cif.clk)) #1;
+  nif.CmdW=1;
+  nif.DataW=7;
+  repeat(500000) @(posedge(cif.clk)) #1;
   $display("Safety timer expired");
   $finish;
 end
@@ -45,15 +52,18 @@ initial
   begin
     #0;
     uvm_config_db #(virtual crc_if)::set(null, "uvm_test_top", "crc_if" , cif);
+    uvm_config_db #(virtual nocif)::set(null, "uvm_test_top", "noc_if" , nif);
+    $display("About to run crc_test");
     run_test("crc_test");
     #100;
     $display("\n\n\nOh what happiness, you passed the test\n\n\n");
+    repeat(10) @(posedge(cif.clk)) #1;
     $finish;
   end
 
 initial begin
   if(debug) begin
-    $dumpfile("crc.vpd");
+    $dumpfile("noc.vpd");
     $dumpvars(9,top);
   end
 end

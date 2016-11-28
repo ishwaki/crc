@@ -1,43 +1,4 @@
 
-//`include "tot.sv"
-//`include "engine.sv"
-
-/*
-module crci(	interface i	);
-
-endmodule: crci
-*/
-/*
-struct packed{
-		logic [31 : 24] HU;
-		logic [23 : 16] HL;
-		logic [15 : 8] LU;
-		logic [7 : 0] LL;		
-		 }data;
-
-struct packed{
-		logic [31 : 16] H;
-		logic [15 : 0] L;
-		}gpoly;
-
-
-struct packed{
-		logic [31 : 30] TOT;
-		logic [29 : 28] TOTR;
-		logic  R;
-		logic  FXOR;
-		logic  WAS;
-		logic  TCRC;
-		logic [23 : 0] def;		
-		}ctrl;
-
-
-*/
-
-
-
-
-
 module crc(crc_if.dp m);
 bit rst;
 logic [31:0] data1;
@@ -53,44 +14,24 @@ bit [1:0] t;
 bit WAS, R;
 logic [1:0] TOT, TOTR;
 bit TCRC;
+bit FXOR;
 logic [31:0 ]cal;
 int i;
-
-
-
-//assign	rst	=	m.rst;
-//assign	was	=	c1.WAS;
 
 always@(*)
   begin
         TOT = ctrl [31 : 30];
         TOTR = ctrl[29 : 28];
-		R = ctrl [27];
-		//logic  FXOR;
-		 WAS = ctrl[25];
-		 TCRC = ctrl[24];
-	//	logic [23 : 0] def;		
+	R = ctrl [27];
+	FXOR	= ctrl [26];
+	WAS = ctrl[25];
+	TCRC = ctrl[24];
   end
-
 always @(posedge m.clk or posedge m.rst)				// this block need to be corrected for latch condition.
     begin
-
-   // c1 = CRC_CTRL;
-    //g1 = CRC_GPOLY;
-
     if (m.rst == 1)
         begin
        ctrl = 32'h0000_0000;
-      /*
-        ctrl.TOT =   0;
-		ctrl.TOTR =   0;
-		ctrl.R    =   0;
-		ctrl.FXOR =   0;
-		ctrl.WAS  =   0;
-		ctrl.TCRC =   0;
-		ctrl.def  =   0;		
-      */
-        
        if (TCRC == 1)
         seed = 32'hFFFF_FFFF;
         else	
@@ -106,33 +47,16 @@ always @(posedge m.clk or posedge m.rst)				// this block need to be corrected f
         end
 
 else 
-//if (m.rst ==0)
 begin
-//end 
-//edata_r = edata;
-  
-
 if (m.addr == 32'h4003_2008 && m.RW == 1 && m.Sel ==1)
 		begin 
 		ctrl = m.data_wr;
-    /*    TOT =   m.data_wr[31:30];
-		TOTR =   m.data_wr[29:28];
-		R    =   m.data_wr[27];
-		FXOR =   m.data_wr[26];
-		ctrl.WAS  =   m.data_wr[25];
-		ctrl.TCRC =   m.data_wr[24];
-		ctrl.def  =   m.data_wr[23:0];	*/	
-        
         end
 if	(m.addr == 32'h4003_2000 && m.RW == 1 && m.Sel ==1)
 		seed = m.data_wr;
 		
 if (m.addr == 32'h4003_2004 && m.RW == 1 && m.Sel ==1)
 		gpoly = m.data_wr;
-
-  
-   
-
   
 if(m.RW   &&    m.addr == 32'h4003_2000    &&  m.Sel) begin
   
@@ -283,6 +207,23 @@ end
 //for
 
   caldata = edata;
+
+if (FXOR == 1)
+	begin
+		if (TCRC ==1)
+		begin
+		caldata = caldata ^32'hFFFF_FFFF;		
+		end
+		else 
+		begin
+			if (TOTR == 2'b11 )
+				caldata= caldata^ 32'h0000_FFFF;
+			else if ( TOTR == 2'b10 )
+				caldata= caldata^ 32'h0000_FFFF;
+			else
+				caldata= caldata^ 32'h0000_FFFF;
+		end
+	end
 
 
 
